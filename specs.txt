@@ -2,26 +2,26 @@ N >= 2 players
 K >= 1 hands
 M >= 2 fingers each hand
 
-hand 
+hand (MODEL)
     - initially 1 finger up
     - inactive: all or no fingers up
     - active: otherwise
 
-player
+player (MODEL)
     - inactive: all K hands are inactive
 
-game 
+game (CONTROLLER)
     - player 1 to N (round-robin)
     - skip inactive players
 
 actions
     - tap or split
-Action 1: Tap
+Action 1: Tap (MODEL)
     - select own one active hand (source)
     - select enemy one active hand (target)
     - t_(i+1) = s_i + t_i
     - rollover rule applied (wrap back if sobra) 
-Action 2: Split
+Action 2: Split (MODEL)
     - select one active hand (source)
     - distribute G fingers (assuming that fingers up is F) to a target hand 
     - hence, result will be F-G fingers
