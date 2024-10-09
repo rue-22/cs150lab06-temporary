@@ -1,22 +1,36 @@
-from required_types import Action
+from required_types import PlayerId, HandId, Action, HandInfo
 from view import ChopsticksTerminalView
+from model import ChopsticksGameModel
+import sys
 
-'''
-    N >= 2 players
-    K >= 1 hands
-    M >= 2 fingers each hand
+class ChopsticksGameController:
+    def __init__(self, n: int, k: int, m: int, model: ChopsticksGameModel, view: ChopsticksTerminalView):
+        self._n = n
+        self._k = k
+        self._m = m
+        self._model = model
+        self._view = view
 
-    hand 
-        - initially 1 finger up
-        - inactive: all or no fingers up
-        - active: otherwise
+    def start(self):
+        model = self._model
+        view = self._view
 
-    player
-        - inactive: all K hands are inactive
-
-    game 
-        - player 1 to N (round-robin)
-        - skip inactive players
+        print('here at start')
 
 
-'''
+
+def main():
+    args = sys.argv[1:]
+    n, k, m = map(int, args)
+
+    model = ChopsticksGameModel(n, k, m)
+    view = ChopsticksTerminalView()
+    controller = ChopsticksGameController(n, k, m, model, view)
+    controller.start()
+
+
+     
+
+
+if __name__ == "__main__":
+    main()

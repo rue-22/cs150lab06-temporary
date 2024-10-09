@@ -1,0 +1,30 @@
+N >= 2 players
+K >= 1 hands
+M >= 2 fingers each hand
+
+hand 
+    - initially 1 finger up
+    - inactive: all or no fingers up
+    - active: otherwise
+
+player
+    - inactive: all K hands are inactive
+
+game 
+    - player 1 to N (round-robin)
+    - skip inactive players
+
+actions
+    - tap or split
+Action 1: Tap
+    - select own one active hand (source)
+    - select enemy one active hand (target)
+    - t_(i+1) = s_i + t_i
+    - rollover rule applied (wrap back if sobra) 
+Action 2: Split
+    - select one active hand (source)
+    - distribute G fingers (assuming that fingers up is F) to a target hand 
+    - hence, result will be F-G fingers
+    - if inactive, fingers will be G
+    - if active, F+G
+    - split must not make a hand full (inactive) or exceed
