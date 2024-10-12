@@ -25,6 +25,10 @@ class Player:
     @property
     def player_id(self):
         return self._player_id
+    
+    @property
+    def player_hands(self):
+        return self._hands
 
     @property
     def player_state(self):
@@ -168,5 +172,4 @@ class ChopsticksGameModel:
             if target.fingers_up + distributed_fingers >= self._m:
                 raise Exception('split exceeded total fingers')
             target.add_fingers(distributed_fingers)
-            
     
