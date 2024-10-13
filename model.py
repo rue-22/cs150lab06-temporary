@@ -54,10 +54,12 @@ class Player:
             hand_id += 1
             self._hands.append(h)
     
-    # def check_state(self):
-    #     for hand in self._hands:
-    #         if hand._hand_state is HandState.ACTIVE:
-    #             self._player_state = PlayerState.ACTIVE
+    def update_player_state(self):
+        for hand in self._hands:
+            if hand.hand_state is HandState.ACTIVE:
+                self._player_state = PlayerState.ACTIVE
+                return
+        self._player_state = PlayerState.INACTIVE
 
     
 
