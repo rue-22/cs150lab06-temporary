@@ -1,6 +1,6 @@
 from required_types import PlayerId, HandId, Action, HandInfo
 from view import ChopsticksTerminalView
-from model import ChopsticksGameModel, Hand
+from model import ChopsticksGameModel, Hand, PlayerState
 import sys
 from collections.abc import Sequence
 
@@ -25,11 +25,12 @@ class ChopsticksGameController:
 
         for player in playerslist:
             currid = player.player_id
-            playerandhand[currid] = player.player_hands
+            playerandhand[currid] = player.hands
         
         while True:
             current = playerslist[nextindex].player_id
             view.clear_screen()
+            print(playerslist[nextindex].player_id, playerslist[nextindex].check_state())
             view.show_round_number(round)
             view.show_all_hands(playerandhand, current)
 
@@ -40,22 +41,38 @@ class ChopsticksGameController:
                     for currplayer in playerslist:
                         if currplayer.player_id == current:
                             sourceplayer = currplayer
-                    sources = sourceplayer.player_hands
+                    sources = sourceplayer.hands
                     otherhands = []
                     for otherplayer in playerslist:
                         if otherplayer.player_id != current:
-                            for hand in otherplayer.player_hands:
+                            for hand in otherplayer.hands:
                                 otherhands.append(hand)
                     targets = otherhands
                     source, target = view.ask_for_tap_pair(sources, targets)
                     model.perform_tap(source.fingers_up, source, target)
                 case Action.SPLIT:
-                    pass
+                    for currplayer in playerslist:
+                        if currplayer.player_id == current:
+                            sourceplayer = currplayer
+                    sources = sourceplayer.hands
+                    if sources:
+                        source = view.ask_for_split_source(sources)
+                        targethands = []
+                        for hand in sources:
+                            if hand.hand_id != source.hand_id:
+                                targethands.append(hand)
+                        targets = targethands
+                        new_source, new_targets = view.ask_for_split_assignments(source, targets)
+            
+            
             
             round+=1
             
-            nextindex = nextindex + 1 if nextindex + 1 in indexlist else indexlist[0] 
-            if round == 5:
+            nextindex = nextindex + 1 if nextindex + 1 in indexlist else indexlist[0]
+            if playerslist[nextindex].check_state() == PlayerState.INACTIVE:
+                nextindex += 1
+            
+            if round == 10:
                 break
 
 

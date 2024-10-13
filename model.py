@@ -1,6 +1,7 @@
 from required_types import PlayerId, HandId, HandInfo
 from view import ChopsticksTerminalView
 from enum import StrEnum
+from typing import Mapping
 from pprint import pprint
 
 
@@ -18,21 +19,21 @@ class Player:
         self._player_id = PlayerId(player_id)
         self._total_hands = total_hands
         self._total_fingers = total_fingers
-        self._hands: list[Hand] = []
+        self._hands: list[Hand] = [] 
         self._init_finger_up = 1
-        self._player_state = PlayerState.INACTIVE
+        self._player_state = PlayerState.ACTIVE
 
     @property
     def player_id(self):
         return self._player_id
-    
-    @property
-    def player_hands(self):
-        return self._hands
 
     @property
     def player_state(self):
         return self._player_state
+
+    @property
+    def hands(self):
+        return self._hands
 
     #! only for debugging (remove it)
     def __repr__(self) -> str:
@@ -53,10 +54,14 @@ class Player:
             hand_id += 1
             self._hands.append(h)
     
-    # def check_state(self):
-    #     for hand in self._hands:
-    #         if hand._hand_state is HandState.ACTIVE:
-    #             self._player_state = PlayerState.ACTIVE
+    def check_state(self) -> PlayerState:
+         isactive = False
+         for hand in self._hands:
+             if hand.hand_state is HandState.ACTIVE:
+                isactive = True
+         if not isactive:
+            self._player_state = PlayerState.INACTIVE
+         return self.player_state
 
     
 
@@ -118,7 +123,7 @@ class Hand:
 
     def add_fingers(self, to_add: int) -> None:
         self._fingers_up = (self._fingers_up + to_add) % self._total_fingers
-        if self._fingers_up == self._total_fingers:
+        if self._fingers_up == self._total_fingers or self._fingers_up == 0:
             self._hand_state = HandState.INACTIVE
 
     def set_fingers(self, to_change: int) -> None:
@@ -146,8 +151,7 @@ class ChopsticksGameModel:
             players.append(p)
 
             self._player_id += 1
-            self._hand_id += self._k 
-        print(len(players))
+            self._hand_id = 1
         return players
     
     def perform_tap(self, added_fingers: int, source: Hand, target: Hand) -> None:
@@ -172,4 +176,3 @@ class ChopsticksGameModel:
             if target.fingers_up + distributed_fingers >= self._m:
                 raise Exception('split exceeded total fingers')
             target.add_fingers(distributed_fingers)
-    
