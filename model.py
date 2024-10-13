@@ -1,8 +1,5 @@
 from required_types import PlayerId, HandId, HandInfo
-from view import ChopsticksTerminalView
 from enum import StrEnum
-from typing import Mapping
-from pprint import pprint
 
 
 class HandState(StrEnum):
@@ -15,12 +12,12 @@ class PlayerState(StrEnum):
 
 
 class Player:
-    def __init__(self, player_id: int, total_hands: int, total_fingers: int):
+    def __init__(self, player_id: int, total_hands: int, total_fingers: int, init_fingers: int):
         self._player_id = PlayerId(player_id)
         self._total_hands = total_hands
         self._total_fingers = total_fingers
-        self._hands: list[Hand] = [] 
-        self._init_finger_up = 1
+        self.hands: list[Hand] = [] 
+        self._init_finger_up = init_fingers 
         self._player_state = PlayerState.ACTIVE
 
     @property
@@ -31,17 +28,16 @@ class Player:
     def player_state(self):
         return self._player_state
 
-    @property
-    def hands(self):
-        return self._hands
+    # @property
+    # def hands(self):
+    #     return self._hands
 
     #! only for debugging (remove it)
     def __repr__(self) -> str:
         print(f'{self._player_id}')
-        for i in range(len(self._hands)):
-            print(f'hand_id {self._hands[i].hand_id}: ({self._hands[i].fingers_up}/{self._hands[i].total_fingers})')
+        for i in range(len(self.hands)):
+            print(f'hand_id {self.hands[i].hand_id}: ({self.hands[i].fingers_up}/{self.hands[i].total_fingers})')
         return '' 
-
 
     def initialize_hands(self, hand_id: int) -> None:
         for _ in range(self._total_hands):
@@ -52,19 +48,14 @@ class Player:
                 self._total_fingers
             )
             hand_id += 1
-            self._hands.append(h)
+            self.hands.append(h)
     
-    def update_player_state(self):
-        for hand in self._hands:
-            if hand.hand_state is HandState.ACTIVE:
+    def update_player_state(self) -> None:
+        for hand in self.hands:
+            if hand.is_active():
                 self._player_state = PlayerState.ACTIVE
                 return
         self._player_state = PlayerState.INACTIVE
-
-    
-
-
-    
 
 
 class Hand:
@@ -73,7 +64,12 @@ class Hand:
         self._player_id = player_id
         self._fingers_up = fingers_up
         self._total_fingers = total_fingers
-        self._hand_state = HandState.ACTIVE
+
+    #! only for debugging (remove it)
+    def __repr__(self) -> str:
+        print(f'Player {self._player_id} - Hand {self._hand_id}')
+        print(f'hand_id {self.hand_id}: ({self.fingers_up}/{self.total_fingers})')
+        return '' 
 
     @property
     def hand_id(self) -> HandId:
@@ -91,33 +87,35 @@ class Hand:
     def total_fingers(self) -> int:
         return self._total_fingers
     
-    @property
-    def hand_state(self) -> HandState:
-        return self._hand_state
+    # @property
+    # def hand_state(self) -> HandState:
+    #     return self._hand_state
 
     def is_active(self) -> bool:
-        if self._hand_state is HandState.ACTIVE:
+        # if self._hand_state is HandState.ACTIVE:
+        #     return True
+        # return False
+        if self._fingers_up < self._total_fingers and self._fingers_up != 0:
             return True
         return False
 
     def is_inactive(self) -> bool:
-        if self._hand_state is HandState.INACTIVE:
+        # if self._hand_state is HandState.INACTIVE:
+        #     return True
+        # return False
+        if self._fingers_up == self._total_fingers or self._fingers_up == 0:
             return True
         return False
 
     def to(self, fingers_up: int) -> HandInfo | None:
-        new_hand_info = self
-        new_hand_info._fingers_up = fingers_up
-        return new_hand_info
-        """Return a copy of the `HandInfo` object with a new value for `fingers_up`.
-
-        As `HandInfo` is expected to be immutable, this method can be used to
-        "update" the `fingers_up` field of the existing `HandInfo` object by
-        creating a _new_ object with its field values copied from the original
-        except for `fingers_up` which is taken from the `fingers_up` parameter. 
-        """
-        ...
-
+        if 0 <= fingers_up < self.total_fingers:
+            return Hand(
+                hand_id=self.hand_id,
+                player_id=self.player_id,
+                fingers_up=fingers_up,
+                total_fingers=self.total_fingers,
+            )
+        return None
 
     def add_fingers(self, to_add: int) -> None:
         self._fingers_up = (self._fingers_up + to_add) % self._total_fingers
@@ -128,11 +126,6 @@ class Hand:
         self._fingers_up = to_change
         
 
-
-
-
-
-
 class ChopsticksGameModel:
     def __init__(self, n: int, k: int, m: int):
         self._n = n
@@ -140,39 +133,63 @@ class ChopsticksGameModel:
         self._m = m
         self._player_id = 1
         self._hand_id = 1
+        self._players = []
+        self._players_hands: dict[PlayerId, list[Hand]] = {}
 
-    def initialize_players(self) -> list[Player]:
+    @property
+    def players(self):
+        return self._players
+
+    @property
+    def players_hands(self):
+        return self._players_hands
+
+    def initialize_players(self) -> None:
         players: list[Player] = []
         for _ in range(self._n):
-            p = Player(self._player_id, self._k, self._m)
+            p = Player(self._player_id, self._k, self._m, 1)
             p.initialize_hands(self._hand_id)
             players.append(p)
 
             self._player_id += 1
             self._hand_id = 1
-        return players
+        self._players = players
+        self.update_players_hands()
     
     def perform_tap(self, added_fingers: int, source: Hand, target: Hand) -> None:
-        #! REMOVE HANDS IN VIEW KAPAG INACTIVE NA SIYA
-        assert(source.hand_state is HandState.ACTIVE and target.hand_state is HandState.ACTIVE)
-        if source.hand_state is HandState.ACTIVE and target.hand_state is HandState.ACTIVE:
+        assert(source.is_active() and target.is_active())
+        if source.is_active() and target.is_active():
             target.add_fingers(added_fingers)
         
+    def perform_split(self, source: HandInfo, targets: list[HandInfo]):
+        new_source = source.to(source.fingers_up)
+        assert new_source is not None
+        for player in self._players:
+            if player.player_id == source.player_id:
+                for i, hand in enumerate(player.hands):
+                    if hand.hand_id == new_source.hand_id:
+                        player.hands[i] = Hand(
+                            hand_id=new_source.hand_id,
+                            player_id=new_source.player_id,
+                            fingers_up=new_source.fingers_up,
+                            total_fingers=new_source.total_fingers
+                        )
 
-    def perform_split(self, distributed_fingers: int, source: Hand, target: Hand):
-        assert(source.hand_state is HandState.ACTIVE)
-        
-        # subtract G fingers from F (F - G)
-        source.add_fingers(-distributed_fingers)
+        for target in targets:
+            new_target = target.to(target.fingers_up)
+            assert(new_target is not None)
+            for player in self._players:
+                if player.player_id == new_target.player_id:
+                    for i, hand in enumerate(player.hands):
+                        if hand.hand_id == new_target.hand_id:
+                            player.hands[i] = Hand(
+                                hand_id=new_target.hand_id,
+                                player_id=new_target.player_id,
+                                fingers_up=new_target.fingers_up,
+                                total_fingers=new_target.total_fingers
+                            )
 
-        # if inactive, set fingers up to G
-        if target.hand_state is HandState.INACTIVE:
-            target.set_fingers(distributed_fingers)
-        # if active, simply add it but make sure na it won't get equal to or exceed
-        else:
-            #! CHANGE THIS
-            if target.fingers_up + distributed_fingers >= self._m:
-                raise Exception('split exceeded total fingers')
-            target.add_fingers(distributed_fingers)
-            
-    
+        self.update_players_hands()
+
+    def update_players_hands(self):
+        self._players_hands = {player.player_id: player.hands for player in self._players}
