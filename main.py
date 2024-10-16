@@ -50,8 +50,8 @@ class ChopsticksGameController:
                     target = self._get_split_targets(curr_player_hands, source)
                     if len(target) != 0:
                         info, infos = view.ask_for_split_assignments(source, target)
-                        print(info)
-                        [print(inf) for inf in infos]
+                        # print(info)
+                        # [print(inf) for inf in infos]
                         model.perform_split(info, infos)
                     else:
                         view.show_split_no_targets()
