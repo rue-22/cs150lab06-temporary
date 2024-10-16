@@ -156,40 +156,63 @@ class ChopsticksGameModel:
         self._players = players
         self.update_players_hands()
     
-    def perform_tap(self, added_fingers: int, source: Hand, target: Hand) -> None:
+    def perform_tap(self, added_fingers: int, source: HandInfo, target: HandInfo) -> None:
         assert(source.is_active() and target.is_active())
         if source.is_active() and target.is_active():
-            target.add_fingers(added_fingers)
+            new_fingers_up = (target.fingers_up + added_fingers) % target.total_fingers
+            new_target = target.to(new_fingers_up)
+            assert new_target is not None
+            self._update_hand_fingers(new_target)
+        # self.update_players_hands()
+
         
     def perform_split(self, source: HandInfo, targets: list[HandInfo]):
         new_source = source.to(source.fingers_up)
         assert new_source is not None
-        for player in self._players:
-            if player.player_id == source.player_id:
-                for i, hand in enumerate(player.hands):
-                    if hand.hand_id == new_source.hand_id:
-                        player.hands[i] = Hand(
-                            hand_id=new_source.hand_id,
-                            player_id=new_source.player_id,
-                            fingers_up=new_source.fingers_up,
-                            total_fingers=new_source.total_fingers
-                        )
+        self._update_hand_fingers(source)
 
         for target in targets:
             new_target = target.to(target.fingers_up)
-            assert(new_target is not None)
-            for player in self._players:
-                if player.player_id == new_target.player_id:
-                    for i, hand in enumerate(player.hands):
-                        if hand.hand_id == new_target.hand_id:
-                            player.hands[i] = Hand(
-                                hand_id=new_target.hand_id,
-                                player_id=new_target.player_id,
-                                fingers_up=new_target.fingers_up,
-                                total_fingers=new_target.total_fingers
-                            )
+            assert new_target is not None
+            self._update_hand_fingers(new_target)
+        # for player in self._players:
+        #     if player.player_id == source.player_id:
+        #         for i, hand in enumerate(player.hands):
+        #             if hand.hand_id == new_source.hand_id:
+        #                 player.hands[i] = Hand(
+        #                     hand_id=new_source.hand_id,
+        #                     player_id=new_source.player_id,
+        #                     fingers_up=new_source.fingers_up,
+        #                     total_fingers=new_source.total_fingers
+        #                 )
+
+        # for target in targets:
+        #     new_target = target.to(target.fingers_up)
+        #     assert(new_target is not None)
+        #     for player in self._players:
+        #         if player.player_id == new_target.player_id:
+        #             for i, hand in enumerate(player.hands):
+        #                 if hand.hand_id == new_target.hand_id:
+        #                     player.hands[i] = Hand(
+        #                         hand_id=new_target.hand_id,
+        #                         player_id=new_target.player_id,
+        #                         fingers_up=new_target.fingers_up,
+        #                         total_fingers=new_target.total_fingers
+        #                     )
 
         self.update_players_hands()
+    
+    def _update_hand_fingers(self, new_target: HandInfo):
+        for player in self._players:
+            if player.player_id == new_target.player_id:
+                for i, hand in enumerate(player.hands):
+                    if hand.hand_id == new_target.hand_id:
+                        player.hands[i] = Hand(
+                            hand_id=new_target.hand_id,
+                            player_id=new_target.player_id,
+                            fingers_up=new_target.fingers_up,
+                            total_fingers=new_target.total_fingers
+                        )
 
     def update_players_hands(self):
         self._players_hands = {player.player_id: player.hands for player in self._players}

@@ -114,7 +114,7 @@ class ChopsticksGameController:
             if hand.hand_id != source.hand_id:
                 if source.fingers_up == 1 and hand.total_fingers - hand.fingers_up == 1:
                     continue
-                elif source.fingers_up < hand.total_fingers - hand.fingers_up:
+                elif hand.total_fingers - hand.fingers_up > 1:
                     target.append(hand)
         
         return target
